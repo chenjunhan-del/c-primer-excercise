@@ -1324,13 +1324,85 @@ s2=s1;
 
 
 
+# 第十三章 类继承
+
+可以通过类继承完成以下工作：
+
+- 可以在已有类的基础上添加功能。例如，对于数组类，可以添加数学运算。
+- 可以给类添加数据。例如，对于字符串类，可以派生出一个类，并添加指定字符串显示颜色的数据成员。
+- 可以修改类方法的行为。例如，对于代表提供给飞机乘客的服务的`Passenger`类。可以派生出提供更高级别服务的`FirstClassPassenger`类。
+
+实际上也可以通过复制原始类代码，对其进行修改来完成上述工作。但类继承机制只需提供新特性，甚至不需要访问源代码就可以派生出类。
 
 
 
+## 13.1 一个简单的基类
+
+从一个类派生出另一个类时，原始类称为基类，继承类称为派生类。
 
 
 
+### 13.1.1 派生一个类
 
+将`RatedPlayer`类声明为从`TableTennisClass`类派生而来：
+
+```c++
+class RatedPlayer:public TableTennisClass{
+    ...
+};
+```
+
+冒号指出`RatedPlayer`类的基类是`TableTennisPlayer`类，`public`表示公有派生。使用公有派生后：派生类对象包含基类对象；基类的公有成员将成为派生类的公有成员；基类的私有部分也将成为派生类的一部分，但只能通过基类的公有和保护方法访问。
+
+上述代码完成的工作有：
+
+- 派生类对象存储了基类的数据成员（派生类继承了基类的实现）。
+- 派生类对象可以使用基类的方法（派生类继承了基类的接口）。
+
+
+
+提出了一个问题：需要在继承特性中添加什么呢？
+
+- 派生类需要自己的构造函数。
+- 派生类可以根据需要添加额外的数据成员和成员函数。
+
+在这个例子中，派生类需要另一个数据成员来存储比分，还应包含检索比分的方法和重置比分的方法，类声明与以下类似：
+
+```c++
+class RatedPlayer:public TableTennisPlayer{
+private:
+    unsigned int rating;
+public:
+    RatedPlayer(unsigned int r=0,const string& fn="none",const string& ln="none",bool ht=false);
+    RatedPlayer(unsigned int r,const TableTennisPlayer&tp);
+    unsigned int Rating()const{return rating;}
+    void ResetRating(unsigned int r){rating=r;}
+};
+```
+
+构造函数必须给新成员（如果有的话）和继承的成员提供数据。
+
+
+
+### 13.1.2 构造函数：访问权限的考虑
+
+由于派生类不能直接访问基类的私有成员，而必须通过基类方法进行访问。例如，`RatedPlayer`构造函数不能直接设置继承的成员（`firstname`，`lastname`和`hasTable`），而必须使用基类的公有方法来访问私有的基类成员。具体地说，派生类构造函数必须使用基类构造函数。
+
+创建派生类对象时，程序首先创建基类对象。从概念上说，这意味着基类对象应当在程序进入派生类构造函数之前被创建。`C++`使用成员初始化列表语法来完成这项工作，如下：
+
+```c++
+RatedPlayer::RatedPlayer(unsigned int r,const string&fn,const string&ln,bool ht):TableTennisPlayer(fn,ln,ht){
+    rating=r;
+}
+```
+
+其中，`:TableTennisPlayer(fn,ln,ht)`是成员初始化列表。它是可执行的代码，调用`TableTennisPlayer`构造函数。
+
+假如程序包含如下声明：
+
+`Ratedplayer rplayer1(1140,"Mallory","Duck",true);`
+
+则`RatedPlayer`构造函数将把实参`"Mallory"`，`"Duck"`和`true`赋给形参`fn`，`ln`和`ht`，然后将这些参数作为实参传递给`TableTennisPlayer`构造函数，后者将创建一个嵌套的`TableTennisPlayer`对象，并将数据`"Mallory"`，`"Duck"`和`true`存储在该对象中
 
 
 
