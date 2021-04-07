@@ -1495,6 +1495,212 @@ RatedPlayer* pr=player;//不允许
 
 基类引用定义的函数或指针参数可用于基类对象或派生类对象。例如：
 
+```c++
+void Show(const TableTennisPlayer& rt){
+    using std::cout;
+    cout<<"Name:";
+    rt.Name();
+    ...
+}
+```
+
+形参`rt`是一个基类引用，它可以指向基类对象或派生类对象，所以可以在`Show()`中使用`TableTennisPlayer`参数或`RatedPlayer`参数：
+
+```c++
+TableTennisPlayer player1("Tara","Boomdea",false);
+RatedPlayer rplayer1(1140,"Mallory","Duck",true);
+Show(player1);
+Show(rplayer1);
+```
+
+形参为指向基类的指针的函数也存在类似的关系，例如：
+
+```c++
+void Show(const TableTennisPlayer* pt){
+    ...
+}
+TableTennisPlayer player1("Tara","Boomdea",false);
+RatedPlayer rplayer1(1140,"Mallory","Duck",true);
+Show(&player1);
+Show(&rplayer1);
+```
+
+
+
+引用兼容性属性使得基类对象可以初始化为派生类对象，例如：
+
+```c++
+RatedPlayer olaf1(1840,"Olaf","Loaf",true);
+TableTennisPlayer olaf2(olaf1);
+```
+
+原理是：要初始化`olaf2`，匹配的构造函数原型如下：
+
+```c++
+TableTennisPlayer(const RatedPlayer&);//没有显式定义
+```
+
+类定义中没有这样的构造函数，但存在隐式复制构造函数：
+
+```c++
+TableTennisPlayer(const TableTennsiPlayer&);
+```
+
+形参是基类引用，因此它可以引用派生类。换句话说，它将`olaf2`初始化为嵌套在`RatedPlayer`对象`olaf1`中的`TableTennisPlayer`对象。
+
+
+
+同样，也可以将派生对象赋给基类对象：
+
+```c++
+RatedPlayer olaf1(1841,"Olaf","Loaf",true);
+TableTennisPlayer winner;
+winner=olaf1;//用派生类对象赋给基类对象
+```
+
+在这种情况下，程序将使用隐式重载赋值运算符：
+
+```c++
+TableTennisPlayer& operator=(const TableTennisPlayer&)const;
+```
+
+基类引用指向的也是派生类对象，因此`olaf1`的基类部分被复制给`winner`。
+
+
+
+## 13.2 继承：is-a关系
+
+实际上，`C++`有3种继承方式：公有继承、保护继承和私有继承。公有继承是最常用的方式，它建立一种`is-a`关系，即派生类对象也是一个基类对象，可以对基类对象执行的任何操作，也可以对派生类对象执行。`is-a`关系，也称为`is-a-kind-of`。
+
+以下几种关系公有继承并不建立：
+
+- `has-a`关系
+- `is-like-a`关系，也就是说，它不采用明喻。
+- `is-implemented-as-a`关系（作为......来实现）。
+- `uses-a`关系。
+
+
+
+## 13.3 多态公有继承
+
+可能会碰到这样的情况，即希望同一个方法在派生类和基类中的行为是不同的。换句话来说，方法的行为应取决于调用该方法的对象。这种较复杂的行为称为多态，有两种方式可以实现它：
+
+- 在派生类中重新定义基类的方法。
+- 使用虚方法。
+
+
+
+### 13.3.1 开发Brass类和BrassPlus类
+
+假如在基类和派生类中都声明了`ViewAcct()`方法，这将导致有两个独立的方法定义。基类版本的限定名为`Brass::ViewAcct()`，而派生类版本的限定名为`BrassPlus::ViewAcct()`。程序将使用对象类型来确定使用哪个版本：
+
+```c++
+Brass dom("Dominic Banker",11224,4183.45);
+BrassPlus dot("Dorothy Banker",12118,2592.00);
+dom.ViewAcct();//使用Brass::ViewAcct()
+dot.ViewAcct();//使用BrassPlus::ViewAcct()
+```
+
+
+
+使用`virtual`要更复杂一些。如果没有使用关键字`virtual`，程序将根据引用类型或指针类型选择方法；如果使用了`virtual`，程序将根据引用或指针指向的对象的类型来选择方法。如果`ViewAcct()`不是虚的，则程序的行为如下：
+
+```c++
+Brass dom("Dominic Banker",11224,4183.45);
+BrassPlus dot("Dorothy Banker",12118,2592.00);
+Brass& b1_ref=dom;//指向基类对象
+Brass& b2_ref=dot;//指向派生类对象
+b1_ref.ViewAcct();//使用Brass::ViewAcct()
+b2.ref.ViewAcct();//使用Brass::ViewAcct()
+```
+
+因为引用变量的类型为`Brass`，所以选择了`Brass::ViewAccount()`。使用`Brass`指针代替引用时，行为与此类似。
+
+如果`ViewAcct()`是虚的，则行为如下：
+
+```c++
+Brass dom("Dominic Banker",11224,4183.45);
+BrassPlus dot("Dorothy Banker",12118,2592.00);
+Brass& b1_ref=dom;//指向基类对象
+Brass& b2_ref=dot;//指向派生类对象
+b1_ref.ViewAcct();//使用Brass::ViewAcct()
+b2.ref.ViewAcct();//使用BrassPlus::ViewAcct()
+```
+
+这里两个引用的类型都是`Brass`，但`b2_ref`引用的是一个`BrassPlus`对象，所以使用的是`BrassPlus::ViewAcct()`。使用`Brass`指针代替引用时，行为与此类似。
+
+
+
+虚函数的行为非常方便。因此，经常在基类中将派生类会重新定义的方法声明为虚方法。方法在基类中被声明为虚方法之后，它在派生类中将自动成为虚方法。然而，在派生类声明中使用关键字`virtual`来指出哪些函数时虚函数也是很好的。
+
+
+
+基类声明了一个虚析构函数。这样是为了确保释放派生对象时，按正确的顺序调用析构函数。
+
+请注意，关键字`virtual`只用于类声明的方法原型中，而没有应用于方法定义中。
+
+
+
+以下来开始探讨一些细节和原则：
+
+- 记住，派生类并不能直接访问基类的私有数据，而必须使用基类的公有方法才能访问这些数据。派生类构造函数在初始化基类私有数据时，采用的是成员初始化列表语法。
+
+- 非构造函数不能使用成员初始化列表语法，但派生类方法可以调用公有的基类方法。例如：
+
+  ```c++
+  void BrassPlus::ViewAcct()const{
+  ...
+      Brass::ViewAcct();
+  ...
+  }
+  ```
+
+  在派生类方法中，标准技术是使用作用域解析运算符来调用基类方法。如果是这样：
+
+  ```c++
+  void BrassPlus::ViewAcct()const{
+  ...
+      ViewAcct();
+  ...
+  }
+  ```
+
+  编译器将认为`ViewAcct()`是`BrassPlus::ViewAcct()`，这将创建一个不会终止的递归函数。
+
+
+
+#### 4. 为何需要使用虚析构函数
+
+如果析构函数不是虚的，则将只调用对应于指针类型的析构函数。如果基类指针指向派生类对象，则将只调用基类的析构函数。如果析构函数是虚的，则将调用相应对象类型的析构函数。也就是如果基类指针指向派生类对象，将调用派生类的析构函数，然后自动调用基类的析构函数。使用虚析构函数可以保证正确的析构函数序列调用。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
