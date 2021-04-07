@@ -1400,9 +1400,104 @@ RatedPlayer::RatedPlayer(unsigned int r,const string&fn,const string&ln,bool ht)
 
 假如程序包含如下声明：
 
-`Ratedplayer rplayer1(1140,"Mallory","Duck",true);`
+```c++
+RatedPlayer rplayer1(1140,"Mallory","Duck",true);
+```
 
-则`RatedPlayer`构造函数将把实参`"Mallory"`，`"Duck"`和`true`赋给形参`fn`，`ln`和`ht`，然后将这些参数作为实参传递给`TableTennisPlayer`构造函数，后者将创建一个嵌套的`TableTennisPlayer`对象，并将数据`"Mallory"`，`"Duck"`和`true`存储在该对象中
+则`RatedPlayer`构造函数将把实参`"Mallory"`，`"Duck"`和`true`赋给形参`fn`，`ln`和`ht`，然后将这些参数作为实参传递给`TableTennisPlayer`构造函数，后者将创建一个嵌套的`TableTennisPlayer`对象，并将数据`"Mallory"`，`"Duck"`和`true`存储在该对象中。然后，程序进入`RatedPlayer`构造函数体，完成`RatedPlayer`对象的创建，并将`r`的值赋给`rating`成员。
+
+
+
+如果省略成员初始化列表：
+
+```c++
+RatedPlayer::RatedPlayer(unsigned int r,const string&fn,const string&ln,bool ht){
+    rating=r;
+}
+```
+
+因为必须首先创造基类对象，如果不调用基类构造函数，程序将使用默认的基类构造函数。除非要使用默认的构造函数，否则应显式调用正确的基类构造函数。
+
+
+
+下面看看另一种方式：
+
+```c++
+RatedPlayer::RatedPlayer(unsigned int r,const TableTennisPlayer&tp):TableTennisPlayer(tp){
+    ratint=r;
+}
+```
+
+这种方式将调用基类的复制构造函数（如果没有定义复制构造函数，编译器将自动生成一个，在没有使用`new`的情况下，这是合适的）。
+
+
+
+如果愿意，也可以对派生类成员使用成员初始化列表：
+
+```c++
+RatedPlayer::RatedPlayer(unsigned int r,const TableTennisPlayer&tp):TableTennisPlayer(tp),rating(r){
+    ...
+}
+```
+
+
+
+总之，派生类构造函数有以下要点：
+
+- 首先创建基类对象。
+- 派生类构造函数应通过成员初始化列表将基类信息传递给基类构造函数。
+- 派生类构造函数应初始化派生类新增的数据成员。
+
+其中，释放对象的顺序与创建对象的顺序相反，即先执行派生类的析构函数，然后自动调用基类的析构函数。
+
+
+
+### 13.1.3 使用派生类
+
+要使用派生类，程序必须要能够访问基类声明。可以把两个类的声明放于同一个头文件中，也可以把每个类放在独立的头文件中。
+
+
+
+### 13.1.4 派生类和基类的特殊关系
+
+派生类对象可以使用基类的方法，如果该方法不是私有的：
+
+```c++
+RatedPlayer rplayer1(1140,"Mallory","Duck",true);
+rplayer1.Name();
+```
+
+基类指针可以在不进行显式类型转换的情况下指向派生类对象；基类引用可以在不进行显式类型转换的情况下引用派生类对象：
+
+```c++
+RatedPlayer rplayer1(1140,"Mallory","Duck",true);
+TableTennisPlayer& rt=rplayer;
+TableTennisPlayer* pt=&rplayer;
+rt.Name();
+pt->Name();
+```
+
+然而，基类指针或引用只能用于调用基类方法，因此，不能使用`rt`或`pt`来调用派生类的`ResetRanking`方法。
+
+
+
+通常，`C++`要求引用和指针类型与赋给的类型匹配，但这一规则对继承来说是例外。这种例外只是单向的，不可以将基类对象和地址赋给派生类引用和指针：
+
+```c++
+TableTennsiPlayer player("Betsy","Bloop",true);
+RatedPlayer& rr=player;//不允许
+RatedPlayer* pr=player;//不允许
+```
+
+派生类相对于基类，只会多不会少。基类的方法派生类一定有，而派生类的方法基类不一定有。
+
+
+
+基类引用定义的函数或指针参数可用于基类对象或派生类对象。例如：
+
+
+
+
 
 
 
