@@ -1919,6 +1919,52 @@ class Student:protected std::string,protected std::valarray<double>{
 
 ### 14.2.4 使用using重新定义访问权限
 
+使用保护派生或私有派生时，基类的公有成员将成为保护成员或私有成员。假设要让基类的方法在派生类外面可用，方法之一是定义一个使用该基类方法的派生类方法。例如：
+
+```c++
+double Student::sum()const{
+    return std::valarray<double>::sum();
+}
+```
+
+这样`Student`对象便能够调用`Student::sum()`，后者进而将`valarray<double>::sum()`方法应用于被包含的`valarray`对象。
+
+
+
+另一种方法是，将函数调用包装在另一个函数调用中，即使用一个`using`声明来指出派生类可以使用特定的基类成员，即使采用的是私有派生。如下：
+
+```c++
+class Student:private std::string,private std::valarray<double>{
+...
+public:
+    using std::valarray<double>::min;
+    using std::valarray<double>::max;
+    ...
+};
+```
+
+上述`using`声明使得`valarray<double>::min()`和`valarray<double>::max`可用，就像它们是`Student`对象的公有方法一样：
+
+```c++
+cout<<ada[i].max()<<endl;
+```
+
+
+
+注意，`using`声明只使用成员名——没有圆括号、函数特征标和返回类型。如果有多个版本（函数重载），则`using`声明将使得所有的版本可用。`using`声明只适用于继承，而不适用于包含。
+
+
+
+一种古老的方式可以用于在私有派生类中重新声明基类方法，不过现在已经被摒弃：
+
+```c++
+class Student:private std::string,private std::valarray<double>{
+...
+public:
+    std::valarray<double>::operator[];
+    ...
+};
+```
 
 
 
@@ -1926,34 +1972,68 @@ class Student:protected std::string,protected std::valarray<double>{
 
 
 
+## 14.4 类模板
+
+模板提供参数化类型，即能够将类型名作为参数传递给接收方来建立类或函数。
 
 
 
+### 14.4.1 定义类模板
+
+采用模板时，将使用模板定义替换普通类声明，使用模板成员函数替换普通成员函数。和模板函数一样，模板类以下面这样的代码开头：
+
+```c++
+template<class Type>
+```
+
+关键字`template`告诉编译器这将定义一个模板，尖括号中的内容相当于函数的参数列表。可以使用不容易混淆的关键字`typename`代替`class`：
+
+```c++ 
+template<typename Type>
+```
+
+在模板定义中，可以使用泛型名来标识要存储在其中的类型：
+
+```c++
+Type itemx[MAX];
+```
 
 
 
+同样，可以使用模板成员函数替换原有类的类方法。每个函数头都将以相同的模板声明打头：
+
+```c++
+template<class Type>;
+```
+
+同样应使用泛型名`Type`。另外，类限定符从`Stack::`变为`Stack<Type>::`，例如：
+
+```c++
+bool Stack::push(const Item&item){
+    ...
+}
+```
+
+应该为：
+
+```c++
+template<class Type>
+bool Stack<Type>::push(const Type&item){
+    ...
+}
+```
+
+如果在类声明中定义了方法（内联定义），则可以省略模板前缀和类限定符。
 
 
 
+请注意：
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- 这些模板不是类和成员函数，它们是c++编译器指令，说明了如何生成类和成员函数定义。
+- 模板的具体实现——如用来处理`string`对象的栈类——被称为实例化或具体化。
+- 不能将模板成员函数放在独立的实现文件中（以前，c++提供了关键字`export`用于将模板成员函数放在独立的实现文件中，现在该关键字的用法已改变）。
+- 由于模板不是函数，它们不能单独编译。模板必须与特定的模板实例化请求一起使用。
+- 最简单的方法是将所有模板信息放在一个头文件中，并在要使用这些模板的文件中包含该头文件。
 
 
 
