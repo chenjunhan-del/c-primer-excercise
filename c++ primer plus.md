@@ -2160,19 +2160,60 @@ template class ArrayTP<string,100>;//显式声明ArrayTP<string,100>类
 
 
 
+### 14.4.9 模板类和友元
+
+模板类声明也可以有友元，模板的友元分3类：
+
+- 非模板友元。
+- 约束模板友元，即友元的类型取决于类被实例化时的类型。
+- 非约束模板友元，即友元的所有具体化都是类的每一个具体化的友元。
 
 
 
+#### 1. 模板类的非模板友元函数
+
+### 14.4.10 模板别名（c++11）
+
+可以使用`typedef`为模板具体化指定别名：
+
+```c++
+typedef std::array<double,12> arrd;
+typedef std::array<int,12> arri;
+typedef std::array<std::string,12> arrst;
+arrd gallons;
+arri days;
+arrst months;
+```
+
+然而，经常使用`typedef`可能没有那么直观，c++11可以使用模板提供一系列别名：
+
+```c++
+template<typename T>
+	using arrtype=std::array<T,12>;
+```
+
+这将使`arrtype`成为一个模板别名，可以使用它来指定类型：
+
+```c++
+arrtype<double> gallons;
+arrtype<int> days;
+arrtype<std::string> months;
+```
+
+总之，`arrtype<T>`表示类型`std::array<T,12>`。
 
 
 
+c++11还允许将`using=`用于非模板，用于非模板时，这种语法与常规`typedef`等价：
 
+```c++
+typedef const char* p1;
+using pc2=const char*;
+typedef const int*(*pal)[10];
+using pa2=const int *(*)[10];
+```
 
-
-
-
-
-
+这种方式的可读性更强。
 
 
 
