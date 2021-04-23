@@ -2172,6 +2172,98 @@ template class ArrayTP<string,100>;//显式声明ArrayTP<string,100>类
 
 #### 1. 模板类的非模板友元函数
 
+在模板类中将一个常规函数声明为友元：
+
+```c++
+template<class T>
+class HasFriend{
+public:
+    friend void counts();
+    ...
+};
+```
+
+上述声明使`counts()`函数成为模板所有实例化的友元。
+
+
+
+假如要为友元函数提供模板类参数，可以如下操作么？
+
+```c++
+friend void report(HasFriend &);
+```
+
+答案是不可以。因为不存在`HasFriend`这样的对象，只有特定的具体化，如`HasFriend<int>`对象。可以这样做：
+
+```c++
+template<class T>
+class HasFriend{
+public:
+    friend void report(HasFriend<T> &);
+}
+```
+
+当生成具体的模板实例化时，带`HasFriend<int>`参数的`report()`将成为`HasFriend<int>`类的友元。同样，带`HasFriend<double>`参数的`report()`将是`report()`的一个重载版本——它是`HasFriend<double>`类的友元。
+
+注意，`report()`本身并不是模板函数，而只是使用一个模板作参数。这意味着必须为要使用的友元定义显式具体化：
+
+```c++
+void report(HasFriend<short> &);
+void report(HasFriend<int> &);
+```
+
+
+
+当模板类定义了静态成员时，每一个模板类特定的具体化都将拥有自己的静态成员。
+
+示例代码请寻找第十四章 模板类/14.22 frnd2tmp.h。
+
+
+
+#### 2. 模板类的约束模板友元函数
+
+修改前一个示例，使友元函数本身成为模板。具体地说，为约束模板友元作准备，要使类的每一个具体化都获得与友元匹配的具体化。包含以下三步：
+
+1. 首先，在类定义的前面声明每个模板函数：
+
+   ```c++
+   template<typename T> void counts();
+   template<typename T> void report(T&);
+   ```
+
+2. 然后，在模板类中再次将模板声明为友元：
+
+   ```c++
+   template<typename TT>
+   class HasFriendT{
+   ...
+       friend void counts<TT>();
+       friend void report<>(HasFriend<TT>&);
+   };
+   ```
+
+   声明中的`<>`指出这是模板具体化。对于`report()`，`<>`可以为空，因为可以从函数参数推断出如下模板类型参数：`HasFriend<TT>`；然而，也可以使用：`report<HasFriend<TT>>(HasFriendT<TT> &)`。
+
+   但是`counts()`函数没有参数，因此必须使用模板参数语法`<TT>`来指明其具体化。
+
+   假设声明了这样一个对象：`HasFriendT<int> squack;`。
+
+   编译器将使用`int`替换`TT`，并生成下面的类定义：
+
+   ```c++
+   class HasFriendT<int>{
+   ...
+       friend void counts<int>();
+       friend void report<>(HasFriendT<int> &);
+   }
+   ```
+
+3. 接着，为友元提供模板定义。
+
+
+
+示例代码请寻找第十四章 模板类/14.23 tmp2tmp.h
+
 ### 14.4.10 模板别名（c++11）
 
 可以使用`typedef`为模板具体化指定别名：
